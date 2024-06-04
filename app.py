@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List
 from fastapi import FastAPI, Query
 from fastapi.responses import RedirectResponse
+import re
 
 
 
@@ -60,7 +61,8 @@ async def process_product_name(
     card_id: str = Query(
         ...,
         title='Card ID',
-        description='The card ID of a card from the game Gods Unchained.'
+        description='The card ID of a card from the game Gods Unchained.',
+        regex=r'^\d+$'
     )
 ) -> dict:
     """ # Strategy
