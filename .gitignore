@@ -129,6 +129,7 @@ celerybeat.pid
 .venv
 env/
 venv/
+gods_unchained_venv/
 ENV/
 env.bak/
 venv.bak/
