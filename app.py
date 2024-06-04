@@ -58,7 +58,7 @@ def root():
     return RedirectResponse('/docs')
 
 
-@app.post('/strategy', tags=['Strategy'], response_model=dict)
+@app.get('/strategy', tags=['Strategy'], response_model=dict)
 async def retrieve_card_strategy(
     card_id: str = Query(
         ...,
