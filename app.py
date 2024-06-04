@@ -57,7 +57,7 @@ def root():
 
 
 @app.post('/strategy', tags=['Strategy'], response_model=dict)
-async def process_product_name(
+async def retrieve_card_strategy(
     card_id: str = Query(
         ...,
         title='Card ID',
