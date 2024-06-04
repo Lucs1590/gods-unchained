@@ -30,7 +30,9 @@ This is an API that receive the card ID of a card from the game Gods Unchained a
 
 ## How to use the API
 The API works with endpoints, each one with a specific task.
+
 Basically, you need to send a request to the endpoint, and the API will return a response with the result of the task.
+
 The API has the following endpoints:
 - `/strategy`: This endpoint receives the card ID and returns the strategy to play.
 - `/url-list`: This endpoint returns a list with all the endpoints of the API.
