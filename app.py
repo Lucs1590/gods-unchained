@@ -98,13 +98,24 @@ async def retrieve_card_strategy(
     Returns:
         dict: The strategy to play with the card in **early** or **late** game.
     """
+    strategy = None
     if credentials.username not in allowed_users or allowed_users[credentials.username] != credentials.password:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Basic"},
         )
-    return {'data': 'Strategy'}
+
+    if redis_client:
+        strategy = redis_client.get(card_id)
+        if strategy:
+            return {'strategy': strategy.decode()}
+
+    if redis_client:
+        redis_client.set(card_id, strategy)
+        redis_client.expire(card_id, 60 * 15)  # 15 minutes
+
+    return {'data': strategy}
 
 
 @app.get("/url-list", include_in_schema=False, response_model=List[dict])
