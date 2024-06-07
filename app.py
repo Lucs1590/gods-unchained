@@ -3,10 +3,10 @@ import re
 
 from pathlib import Path
 from typing import List
-from fastapi import FastAPI, Query
+from fastapi import Depends, FastAPI, Query
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.responses import RedirectResponse
 import re
-
 
 
 def read(file_name):
@@ -46,6 +46,17 @@ The source code of this project can be found at [GitHub](https://github.com/Lucs
     )[0]
 )
 
+security = HTTPBasic(
+    description='This is a basic authentication to access the API endpoints.'
+)
+
+allowed_users = {
+    'leonardosilva': 'silvaleonardo',
+    'samuel.silva': 'silva.samuel',
+    'cunha.rodrigo': 'rodrigo.cunha',
+    'lucas.brito': 'brito.lucas'
+}
+
 
 @app.get('/', include_in_schema=False)
 def root():
@@ -60,6 +71,7 @@ def root():
 
 @app.get('/strategy', tags=['Strategy'], response_model=dict)
 async def retrieve_card_strategy(
+    credentials: HTTPBasicCredentials = Depends(security),
     card_id: str = Query(
         ...,
         title='Card ID',
@@ -73,6 +85,8 @@ async def retrieve_card_strategy(
     Returns:
         dict: The strategy to play with the card in **early** or **late** game.
     """
+    if credentials.username not in allowed_users or allowed_users[credentials.username] != credentials.password:
+        return {'data': 'Unauthorized', 'message': 'You are not allowed to access this endpoint.', 'status': 401}
     return {'data': 'Strategy'}
 
 
