@@ -11,7 +11,7 @@ from fastapi.middleware.wsgi import WSGIMiddleware
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.responses import RedirectResponse
 
-from prometheus_client import make_wsgi_app
+from prometheus_client import make_wsgi_app, Summary, Counter
 
 
 def read(file_name):
@@ -56,7 +56,12 @@ app.mount('/prometheus', WSGIMiddleware(make_wsgi_app()))
 security = HTTPBasic(
     description='This is a basic authentication to access the API endpoints.'
 )
-
+request_time, request_count, cache_count, normal_request_count = (
+    Summary('request_processing_seconds', 'Time spent processing request'),
+    Counter('request_count', 'Total request count'),
+    Counter('cache_count', 'Total requests got from cache'),
+    Counter('normal_request_count', 'Total requests got from the normal process')
+)
 allowed_users = {
     'leonardosilva': 'silvaleonardo',
     'samuel.silva': 'silva.samuel',
@@ -99,23 +104,26 @@ async def retrieve_card_strategy(
         dict: The strategy to play with the card in **early** or **late** game.
     """
     strategy = None
-    if credentials.username not in allowed_users or allowed_users[credentials.username] != credentials.password:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Basic"},
-        )
+    with request_time.time():
+        if credentials.username not in allowed_users or allowed_users[credentials.username] != credentials.password:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+                headers={"WWW-Authenticate": "Basic"},
+            )
 
-    if redis_client:
-        strategy = redis_client.get(card_id)
-        if strategy:
-            return {'strategy': strategy.decode()}
+        if redis_client:
+            strategy = redis_client.get(card_id)
+            if strategy:
+                cache_count.inc()
+                return {'strategy': strategy.decode()}
 
-    if redis_client:
-        redis_client.set(card_id, strategy)
-        redis_client.expire(card_id, 60 * 15)  # 15 minutes
+        if redis_client:
+            redis_client.set(card_id, strategy)
+            redis_client.expire(card_id, 60 * 15)  # 15 minutes
 
-    return {'data': strategy}
+        normal_request_count.inc()
+        return {'data': strategy}
 
 
 @app.get("/url-list", include_in_schema=False, response_model=List[dict])
