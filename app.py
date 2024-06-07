@@ -7,6 +7,7 @@ from pathlib import Path
 import redis
 import pandas as pd
 
+from pydantic import BaseModel
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.wsgi import WSGIMiddleware
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -26,6 +27,18 @@ def read(file_name):
     """
     with open(os.path.join(Path(os.path.dirname(__file__)), file_name), encoding='utf-8') as _file:
         return _file.read()
+
+
+class StrategyResponse(BaseModel):
+    """ # Strategy Response
+    This class is a Pydantic model that represents the response of the strategy endpoint.
+
+    Attributes:
+        strategy (str): The strategy to play with the card in **early** or **late** game.
+        status_code (int): The status code of the response. Default is 200.
+    """
+    strategy: str
+    status_code: int = 200
 
 
 app = FastAPI(
@@ -93,7 +106,7 @@ def root():
     return RedirectResponse('/docs')
 
 
-@app.get('/strategy', tags=['Strategy'], response_model=dict)
+@app.get('/strategy', tags=['Strategy'], response_model=StrategyResponse)
 async def retrieve_card_strategy(
     credentials: HTTPBasicCredentials = Depends(security),
     card_id: str = Query(
@@ -124,7 +137,7 @@ async def retrieve_card_strategy(
             strategy = redis_client.get(card_id)
             if strategy:
                 cache_count.inc()
-                return {'strategy': strategy.decode()}
+                return StrategyResponse(strategy=strategy.decode())
 
         card = dataframe[dataframe['id'] == int(card_id)]
         if card.empty:
@@ -140,7 +153,7 @@ async def retrieve_card_strategy(
             redis_client.expire(card_id, 60 * 15)  # 15 minutes
 
         normal_request_count.inc()
-        return {'data': strategy}
+        return StrategyResponse(strategy=strategy)
 
 
 @app.get("/url-list", include_in_schema=False, response_model=List[dict])
