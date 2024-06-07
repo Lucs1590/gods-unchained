@@ -1,5 +1,7 @@
 import os
 import re
+import sys
+import logging
 
 from typing import List
 from pathlib import Path
@@ -13,6 +15,17 @@ from fastapi.middleware.wsgi import WSGIMiddleware
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi import Depends, FastAPI, Query, HTTPException, status
 from prometheus_client import make_wsgi_app, Summary, Counter
+
+logger = logging.getLogger(__name__)
+
+if not logger.handlers:
+    logging.basicConfig(level=logging.INFO)
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter(
+        '%(asctime)s - %(levelname)s - %(message)s'
+    ))
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
 
 
 def read(file_name):
@@ -83,16 +96,19 @@ allowed_users = {
 }
 
 try:
+    logger.info('Connecting to Redis...')
     redis_client = redis.Redis(host='localhost', port=6379, db=0)
     redis_client.config_set('maxmemory-policy', 'allkeys-lru')
 except redis.exceptions.ConnectionError:
+    logger.error('Could not connect to Redis.')
     redis_client = None
 
 try:
+    logger.info('Reading reference data file...')
     dataframe = pd.read_csv('data/cards.csv')
 except FileNotFoundError:
     dataframe = pd.DataFrame()
-    print('Reference file not found.')
+    logger.error('Reference data file not found.')
 
 
 @app.get('/', include_in_schema=False)
@@ -125,8 +141,10 @@ async def retrieve_card_strategy(
     strategy = None
     request_count.inc()
 
+    logger.info(f'Processing request for card ID {card_id}...')
     with request_time.time():
         if credentials.username not in allowed_users or allowed_users[credentials.username] != credentials.password:
+            logger.error('Unauthorized access.')
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect username or password",
@@ -134,11 +152,13 @@ async def retrieve_card_strategy(
             )
 
         if redis_client:
+            logger.info('Checking if the card ID is in the cache...')
             strategy = redis_client.get(card_id)
             if strategy:
                 cache_count.inc()
                 return StrategyResponse(strategy=strategy.decode())
 
+        logger.info('Checking if the card ID is in the reference data...')
         card = dataframe[dataframe['id'] == int(card_id)]
         if card.empty:
             raise HTTPException(
@@ -149,6 +169,7 @@ async def retrieve_card_strategy(
         strategy = card['strategy'].values[0]
 
         if redis_client:
+            logger.info('Saving the card ID in the cache...')
             redis_client.set(card_id, strategy)
             redis_client.expire(card_id, 60 * 15)  # 15 minutes
 
@@ -169,4 +190,5 @@ def get_all_urls():
         "name": route.name,
         'methods': route.methods
     } for route in app.routes]
+    logger.info('Returning the list of URLs...')
     return urls
