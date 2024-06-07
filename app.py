@@ -5,12 +5,12 @@ from typing import List
 from pathlib import Path
 
 import redis
+import pandas as pd
 
-from fastapi import Depends, FastAPI, Query, HTTPException, status
+from fastapi.responses import RedirectResponse
 from fastapi.middleware.wsgi import WSGIMiddleware
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from fastapi.responses import RedirectResponse
-
+from fastapi import Depends, FastAPI, Query, HTTPException, status
 from prometheus_client import make_wsgi_app, Summary, Counter
 
 
@@ -75,6 +75,12 @@ try:
 except redis.exceptions.ConnectionError:
     redis_client = None
 
+try:
+    dataframe = pd.read_csv('data/cards.csv')
+except FileNotFoundError:
+    dataframe = pd.DataFrame()
+    print('Reference file not found.')
+
 
 @app.get('/', include_in_schema=False)
 def root():
@@ -104,6 +110,8 @@ async def retrieve_card_strategy(
         dict: The strategy to play with the card in **early** or **late** game.
     """
     strategy = None
+    request_count.inc()
+
     with request_time.time():
         if credentials.username not in allowed_users or allowed_users[credentials.username] != credentials.password:
             raise HTTPException(
@@ -117,6 +125,15 @@ async def retrieve_card_strategy(
             if strategy:
                 cache_count.inc()
                 return {'strategy': strategy.decode()}
+
+        card = dataframe[dataframe['id'] == int(card_id)]
+        if card.empty:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Card ID not found."
+            )
+
+        strategy = card['strategy'].values[0]
 
         if redis_client:
             redis_client.set(card_id, strategy)
