@@ -1,12 +1,17 @@
 import os
 import re
 
-from pathlib import Path
 from typing import List
+from pathlib import Path
+
+import redis
+
 from fastapi import Depends, FastAPI, Query, HTTPException, status
+from fastapi.middleware.wsgi import WSGIMiddleware
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.responses import RedirectResponse
-import re
+
+from prometheus_client import make_wsgi_app
 
 
 def read(file_name):
@@ -46,6 +51,8 @@ The source code of this project can be found at [GitHub](https://github.com/Lucs
     )[0]
 )
 
+app.mount('/prometheus', WSGIMiddleware(make_wsgi_app()))
+
 security = HTTPBasic(
     description='This is a basic authentication to access the API endpoints.'
 )
@@ -56,6 +63,12 @@ allowed_users = {
     'cunha.rodrigo': 'rodrigo.cunha',
     'lucas.brito': 'brito.lucas'
 }
+
+try:
+    redis_client = redis.Redis(host='localhost', port=6379, db=0)
+    redis_client.config_set('maxmemory-policy', 'allkeys-lru')
+except redis.exceptions.ConnectionError:
+    redis_client = None
 
 
 @app.get('/', include_in_schema=False)
