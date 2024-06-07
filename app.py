@@ -3,7 +3,7 @@ import re
 
 from pathlib import Path
 from typing import List
-from fastapi import Depends, FastAPI, Query
+from fastapi import Depends, FastAPI, Query, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.responses import RedirectResponse
 import re
@@ -86,7 +86,11 @@ async def retrieve_card_strategy(
         dict: The strategy to play with the card in **early** or **late** game.
     """
     if credentials.username not in allowed_users or allowed_users[credentials.username] != credentials.password:
-        return {'data': 'Unauthorized', 'message': 'You are not allowed to access this endpoint.', 'status': 401}
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Basic"},
+        )
     return {'data': 'Strategy'}
 
 
