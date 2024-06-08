@@ -105,7 +105,10 @@ except redis.exceptions.ConnectionError:
 
 try:
     logger.info('Reading reference data file...')
-    dataframe = pd.read_csv('data/cards.csv')
+    dataframe = pd.read_parquet(
+        'data/cards.parquet',
+        engine='pyarrow'
+    )
 except FileNotFoundError:
     dataframe = pd.DataFrame()
     logger.error('Reference data file not found.')
