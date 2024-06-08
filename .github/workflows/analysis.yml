@@ -1,0 +1,46 @@
+name: Gods Unchained Deployment Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: "Name of the deployment pipeline"
+        default: "execution-{{ github.run_id }}"
+
+jobs:
+  gods-unchained-deployment-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python Environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Cache Python dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
+
+      - name: Data Preparation
+        run: python src/pipeline.py --step preprocessing
+
+      - name: Feature Engineering
+        run: python src/pipeline.py --step feature_engineering
+
+      - name: Model Building and Evaluation
+        run: python src/pipeline.py --step model_building
+
+      - name: Upload Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: results
+          path: data/
