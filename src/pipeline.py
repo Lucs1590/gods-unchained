@@ -10,6 +10,7 @@ logger.setLevel(logging.INFO)
 
 
 def main():
+    logger.info('Starting pipeline')
     parser = argparse.ArgumentParser(
         description='Gods Unchained Analysis Steps'
     )
