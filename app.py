@@ -54,6 +54,32 @@ class StrategyResponse(BaseModel):
     status_code: int = 200
 
 
+class CardInfoResponse(BaseModel):
+    """ # Card Info Response
+    This class is a Pydantic model that represents the response of the card info endpoint.
+
+    Attributes:
+        id (str): The ID of the card.
+        name (str): The name of the card.
+        mana (int): The mana of the card.
+        attack (int): The attack of the card.
+        health (int): The health of the card.
+        type (str): The type of the card.
+        god (str): The god of the card.
+        strategy (str): The strategy to play with the card in **early** or **late** game.
+        status_code (int): The status code of the response. Default is 200.
+    """
+    id: int
+    name: str
+    mana: int
+    attack: int
+    health: int
+    type: str
+    god: str
+    strategy: str
+    status_code: int = 200
+
+
 app = FastAPI(
     title='Gods Unchained API',
     description="""
@@ -180,7 +206,44 @@ async def retrieve_card_strategy(
         return StrategyResponse(strategy=strategy)
 
 
-@app.get("/url-list", include_in_schema=False, response_model=List[dict])
+@app.get("/card", response_model=CardInfoResponse, tags=['Card'])
+def get_card_info(
+    card_id: str = Query(
+        ...,
+        title='Card ID',
+        description='The card ID of a card from the game Gods Unchained.',
+        regex=r'^\d+$'
+    )
+) -> dict:
+    """ # Card
+    This function returns the card with the given ID.
+
+    Args:
+        card_id (str): The ID of the card.
+
+    Returns:
+        dict: The card with the given ID.
+    """
+    card = dataframe[dataframe['id'] == int(card_id)]
+    if card.empty:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Card ID not found."
+        )
+    response = CardInfoResponse(
+        id=card['id'].values[0],
+        name=card['name'].values[0],
+        mana=card['mana'].values[0],
+        attack=card['attack'].values[0],
+        health=card['health'].values[0],
+        type=card['type'].values[0],
+        god=card['god'].values[0],
+        strategy=card['strategy'].values[0]
+    )
+    return response
+
+
+@ app.get("/url-list", include_in_schema=False, response_model=List[dict])
 def get_all_urls():
     """ # URL List
     This endpoint returns a list with all the endpoints of the API.
