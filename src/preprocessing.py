@@ -58,7 +58,7 @@ def run():
     )
 
     # Save artifacts
-    os.makedirs("artifa cts", exist_ok=True)
+    os.makedirs("artifacts", exist_ok=True)
     train_dataframe.to_parquet(
         "artifacts/train_dataframe.parquet",
         index=False
