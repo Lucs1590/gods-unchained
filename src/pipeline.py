@@ -19,8 +19,9 @@ def main():
         choices=['preprocessing', 'feature_engineering', 'model_building'],
         required=True
     )
-    step_module = importlib.import_module(f'src.{args.step}')
     args = parser.parse_args()
+    step_module = importlib.import_module(f'{args.step}')
+
     step_module.run()
 
 
