@@ -1,103 +1,83 @@
 import os
-import sys
 import logging
 
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
 
+import matplotlib.pyplot as plt
 from sklearn.feature_selection import mutual_info_classif
 
 logger = logging.getLogger('gods_unchained')
-handler = logging.StreamHandler(sys.stdout)
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
 
 
-def run():
-    train_dataframe = pd.read_parquet("artifacts/train_dataframe.parquet")
-    _path = os.path.abspath(os.path.dirname(os.path.abspath(os.getcwd())))
+def load_preprocessed_data() -> pd.DataFrame:
+    logger.info("Loading preprocessed data...")
+    return pd.read_parquet("artifacts/train_dataframe.parquet")
 
-    train_dataframe['attack'] = train_dataframe['attack'].apply(
-        lambda x: np.log(x) if x > 0 else 0
-    )
-    train_dataframe['mana'] = train_dataframe['mana'].apply(
-        lambda x: np.log(x) if x > 0 else 0
-    )
-    train_dataframe['health'] = train_dataframe['health'].apply(
-        lambda x: np.log(x) if x > 0 else 0
-    )
-    train_dataframe['attack_mana'] = train_dataframe['attack'] + \
-        train_dataframe['mana']
-    train_dataframe['attack_health'] = train_dataframe['attack'] + \
-        train_dataframe['health']
-    train_dataframe['mana_health'] = train_dataframe['mana'] + \
-        train_dataframe['health']
-    train_dataframe['attack_mana_health'] = train_dataframe['attack'] + \
-        train_dataframe['mana'] + train_dataframe['health']
-    train_dataframe['att_greater_5'] = train_dataframe['attack'] > 5
-    train_dataframe['mana_greater_7'] = train_dataframe['mana'] > 7
-    train_dataframe['health_greater_6'] = train_dataframe['health'] > 5
-    train_dataframe['att_greater_mana'] = train_dataframe['attack'] > train_dataframe['mana']
-    train_dataframe['att_greater_health'] = train_dataframe['attack'] > train_dataframe['health']
-    train_dataframe['mana_greater_health'] = train_dataframe['mana'] > train_dataframe['health']
 
-    train_dataframe['att_greater_5'] = train_dataframe['att_greater_5'].astype(
-        int
-    )
-    train_dataframe['mana_greater_7'] = train_dataframe['mana_greater_7'].astype(
-        int
-    )
-    train_dataframe['health_greater_6'] = train_dataframe['health_greater_6'].astype(
-        int
-    )
-    train_dataframe['att_greater_mana'] = train_dataframe['att_greater_mana'].astype(
-        int
-    )
-    train_dataframe['att_greater_health'] = train_dataframe['att_greater_health'].astype(
-        int
-    )
-    train_dataframe['mana_greater_health'] = train_dataframe['mana_greater_health'].astype(
-        int
-    )
+def calculate_log_transformations(df: pd.DataFrame) -> pd.DataFrame:
+    logger.info("Calculating log transformations...")
+    for col in ['attack', 'mana', 'health']:
+        df[col] = df[col].apply(lambda x: np.log(x) if x > 0 else 0)
+    return df
 
-    train_dataframe = pd.get_dummies(
-        train_dataframe,
+
+def calculate_combined_features(df: pd.DataFrame) -> pd.DataFrame:
+    logger.info("Calculating combined features...")
+    df['attack_mana'] = df['attack'] + df['mana']
+    df['attack_health'] = df['attack'] + df['health']
+    df['mana_health'] = df['mana'] + df['health']
+    df['attack_mana_health'] = df['attack'] + df['mana'] + df['health']
+    return df
+
+
+def calculate_comparison_features(df: pd.DataFrame) -> pd.DataFrame:
+    logger.info("Calculating comparison features...")
+    df['att_greater_5'] = (df['attack'] > 5).astype(int)
+    df['mana_greater_7'] = (df['mana'] > 7).astype(int)
+    df['health_greater_6'] = (df['health'] > 5).astype(int)
+    df['att_greater_mana'] = (df['attack'] > df['mana']).astype(int)
+    df['att_greater_health'] = (df['attack'] > df['health']).astype(int)
+    df['mana_greater_health'] = (df['mana'] > df['health']).astype(int)
+    return df
+
+
+def encode_categorical_features(df: pd.DataFrame) -> pd.DataFrame:
+    logger.info("Encoding categorical features...")
+    return pd.get_dummies(
+        df,
         columns=['god', 'type'],
         drop_first=True,
         prefix=['god', 'type'],
         prefix_sep='_'
     )
 
-    train_dataframe.drop('name', axis=1, inplace=True)
-    corr_matrix = train_dataframe.corr()
-    sns.heatmap(corr_matrix, cmap='Blues', fmt=".2f")
-    plt.savefig("artifacts/corr_matrix_engineered.png")
 
-    train_dataframe.replace([np.inf, -np.inf], np.nan, inplace=True)
-    train_dataframe['attack'] = train_dataframe['attack'].fillna(
-        train_dataframe['attack'].mean())
-    train_dataframe['mana'] = train_dataframe['mana'].fillna(
-        train_dataframe['mana'].mean())
-    train_dataframe['health'] = train_dataframe['health'].fillna(
-        train_dataframe['health'].mean())
-    train_dataframe['attack_mana'] = train_dataframe['attack_mana'].fillna(
-        train_dataframe['attack_mana'].mean())
-    train_dataframe['attack_health'] = train_dataframe['attack_health'].fillna(
-        train_dataframe['attack_health'].mean())
-    train_dataframe['mana_health'] = train_dataframe['mana_health'].fillna(
-        train_dataframe['mana_health'].mean())
-    train_dataframe['attack_mana_health'] = train_dataframe['attack_mana_health'].fillna(
-        train_dataframe['attack_mana_health'].mean())
+def impute_missing_values(df: pd.DataFrame) -> pd.DataFrame:
+    logger.info("Imputing missing values...")
+    for col in ['attack', 'mana', 'health', 'attack_mana', 'attack_health', 'mana_health', 'attack_mana_health']:
+        df[col] = df[col].fillna(df[col].mean())
+    return df
 
-    X = train_dataframe.drop(['strategy', 'id'], axis=1)
-    y = train_dataframe['strategy']
 
+def select_features(X: pd.DataFrame, y: pd.Series) -> tuple:
+    logger.info("Selecting features...")
     mutual_info = mutual_info_classif(X, y)
     mutual_info = pd.Series(mutual_info, index=X.columns)
-    mutual_info = mutual_info[mutual_info > 0]
-    mutual_info = mutual_info.sort_values(ascending=False)
+    mutual_info = mutual_info[mutual_info > 0].sort_values(ascending=False)
+    selected_columns = list(mutual_info.index[:7]) + ['strategy', 'id']
+    return selected_columns, mutual_info
+
+
+def save_artifacts(df: pd.DataFrame, columns: list, mutual_info: pd.Series):
+    logger.info("Saving artifacts...")
+    os.makedirs("artifacts", exist_ok=True)
+    df.to_parquet("artifacts/train_dataframe_engineered.parquet", index=False)
+
+    with open("artifacts/selected_columns.txt", "w") as f:
+        for col in columns:
+            f.write(col + "\n")
 
     plt.figure(figsize=(30, 6))
     plt.bar(mutual_info.index, mutual_info)
@@ -105,15 +85,32 @@ def run():
     plt.ylabel('Score')
     plt.title('Feature Importance')
     plt.savefig("artifacts/feature_importance_engineered.png")
+    plt.close()
 
-    selected_columns = list(mutual_info.index[:7]) + ['strategy', 'id']
+
+def run():
+    logger.info("Starting feature engineering step")
+
+    train_dataframe = load_preprocessed_data()
+
+    train_dataframe = calculate_log_transformations(train_dataframe)
+    train_dataframe = calculate_combined_features(train_dataframe)
+    train_dataframe = calculate_comparison_features(train_dataframe)
+    train_dataframe = encode_categorical_features(train_dataframe)
+    train_dataframe = impute_missing_values(train_dataframe)
+
+    train_dataframe.drop('name', axis=1, inplace=True)
+
+    X = train_dataframe.drop(['strategy', 'id'], axis=1)
+    y = train_dataframe['strategy']
+    selected_columns, mutual_info = select_features(X, y)
     train_dataframe = train_dataframe[selected_columns]
 
-    train_dataframe.to_parquet(
-        "artifacts/train_dataframe_engineered.parquet",
-        index=False
-    )
+    corr_matrix_engineered = train_dataframe.corr()
+    plt.figure(figsize=(12, 8))
+    sns.heatmap(corr_matrix_engineered, cmap='Blues', fmt=".2f")
+    plt.title("Correlation Matrix")
+    plt.savefig("artifacts/corr_matrix_engineered.png")
+    save_artifacts(train_dataframe, selected_columns, mutual_info)
 
-    with open("artifacts/selected_columns.txt", "w") as f:
-        for col in selected_columns:
-            f.write(col + "\n")
+    logger.info("Feature engineering completed successfully!")
