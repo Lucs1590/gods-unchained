@@ -16,37 +16,37 @@ def load_preprocessed_data() -> pd.DataFrame:
     return pd.read_parquet("artifacts/train_dataframe.parquet")
 
 
-def calculate_log_transformations(df: pd.DataFrame) -> pd.DataFrame:
+def calculate_log_transformations(dataframe: pd.DataFrame) -> pd.DataFrame:
     logger.info("Calculating log transformations...")
     for col in ['attack', 'mana', 'health']:
-        df[col] = df[col].apply(lambda x: np.log(x) if x > 0 else 0)
-    return df
+        dataframe[col] = dataframe[col].apply(lambda x: np.log(x) if x > 0 else 0)
+    return dataframe
 
 
-def calculate_combined_features(df: pd.DataFrame) -> pd.DataFrame:
+def calculate_combined_features(dataframe: pd.DataFrame) -> pd.DataFrame:
     logger.info("Calculating combined features...")
-    df['attack_mana'] = df['attack'] + df['mana']
-    df['attack_health'] = df['attack'] + df['health']
-    df['mana_health'] = df['mana'] + df['health']
-    df['attack_mana_health'] = df['attack'] + df['mana'] + df['health']
-    return df
+    dataframe['attack_mana'] = dataframe['attack'] + dataframe['mana']
+    dataframe['attack_health'] = dataframe['attack'] + dataframe['health']
+    dataframe['mana_health'] = dataframe['mana'] + dataframe['health']
+    dataframe['attack_mana_health'] = dataframe['attack'] + dataframe['mana'] + dataframe['health']
+    return dataframe
 
 
-def calculate_comparison_features(df: pd.DataFrame) -> pd.DataFrame:
+def calculate_comparison_features(dataframe: pd.DataFrame) -> pd.DataFrame:
     logger.info("Calculating comparison features...")
-    df['att_greater_5'] = (df['attack'] > 5).astype(int)
-    df['mana_greater_7'] = (df['mana'] > 7).astype(int)
-    df['health_greater_6'] = (df['health'] > 5).astype(int)
-    df['att_greater_mana'] = (df['attack'] > df['mana']).astype(int)
-    df['att_greater_health'] = (df['attack'] > df['health']).astype(int)
-    df['mana_greater_health'] = (df['mana'] > df['health']).astype(int)
-    return df
+    dataframe['att_greater_5'] = (dataframe['attack'] > 5).astype(int)
+    dataframe['mana_greater_7'] = (dataframe['mana'] > 7).astype(int)
+    dataframe['health_greater_6'] = (dataframe['health'] > 5).astype(int)
+    dataframe['att_greater_mana'] = (dataframe['attack'] > dataframe['mana']).astype(int)
+    dataframe['att_greater_health'] = (dataframe['attack'] > dataframe['health']).astype(int)
+    dataframe['mana_greater_health'] = (dataframe['mana'] > dataframe['health']).astype(int)
+    return dataframe
 
 
-def encode_categorical_features(df: pd.DataFrame) -> pd.DataFrame:
+def encode_categorical_features(dataframe: pd.DataFrame) -> pd.DataFrame:
     logger.info("Encoding categorical features...")
     return pd.get_dummies(
-        df,
+        dataframe,
         columns=['god', 'type'],
         drop_first=True,
         prefix=['god', 'type'],
@@ -54,11 +54,11 @@ def encode_categorical_features(df: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def impute_missing_values(df: pd.DataFrame) -> pd.DataFrame:
+def impute_missing_values(dataframe: pd.DataFrame) -> pd.DataFrame:
     logger.info("Imputing missing values...")
     for col in ['attack', 'mana', 'health', 'attack_mana', 'attack_health', 'mana_health', 'attack_mana_health']:
-        df[col] = df[col].fillna(df[col].mean())
-    return df
+        dataframe[col] = dataframe[col].fillna(dataframe[col].mean())
+    return dataframe
 
 
 def select_features(X: pd.DataFrame, y: pd.Series) -> tuple:
@@ -70,10 +70,10 @@ def select_features(X: pd.DataFrame, y: pd.Series) -> tuple:
     return selected_columns, mutual_info
 
 
-def save_artifacts(df: pd.DataFrame, columns: list, mutual_info: pd.Series):
+def save_artifacts(dataframe: pd.DataFrame, columns: list, mutual_info: pd.Series):
     logger.info("Saving artifacts...")
     os.makedirs("artifacts", exist_ok=True)
-    df.to_parquet("artifacts/train_dataframe_engineered.parquet", index=False)
+    dataframe.to_parquet("artifacts/train_dataframe_engineered.parquet", index=False)
 
     with open("artifacts/selected_columns.txt", "w") as f:
         for col in columns:
