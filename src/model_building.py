@@ -32,7 +32,7 @@ def get_best_model(ks: list, models: list, names: list) -> list:
 
 
 def run():
-    _path = os.path.abspath(os.path.dirname(os.path.abspath(os.getcwd())))
+    _path = os.path.abspath(os.getcwd())
     train_dataframe = pd.read_parquet(
         "artifacts/train_dataframe_engineered.parquet"
     )
@@ -47,13 +47,13 @@ def run():
     ).reset_index(drop=True)
 
     test_dataframe['attack'] = test_dataframe['attack'].apply(
-        lambda x: np.log(x)
+        lambda x: np.log(x) if x > 0 else 0
     )
     test_dataframe['mana'] = test_dataframe['mana'].apply(
-        lambda x: np.log(x)
+        lambda x: np.log(x) if x > 0 else 0
     )
     test_dataframe['health'] = test_dataframe['health'].apply(
-        lambda x: np.log(x)
+        lambda x: np.log(x) if x > 0 else 0
     )
 
     test_dataframe['attack_mana'] = test_dataframe['attack'] + \
@@ -125,13 +125,21 @@ def run():
     test_dataframe = test_dataframe[X.columns]
 
     models = [
-        ('LR', LogisticRegression()),
-        ('RF', RandomForestClassifier(bootstrap=False, criterion="entropy",
-                                      max_features=0.55, min_samples_leaf=8, min_samples_split=12, n_estimators=100)),
-        ('GB', GradientBoostingClassifier(
-            learning_rate=0.1, n_estimators=100, subsample=0.9)),
+        ('Logistic Regression', LogisticRegression()),
+        ('Random Forest', RandomForestClassifier(
+            bootstrap=False, criterion="entropy",
+            max_features=0.55,
+            min_samples_leaf=8,
+            min_samples_split=12,
+            n_estimators=100
+        )),
+        ('Gradient Boosting', GradientBoostingClassifier(
+            learning_rate=0.1,
+            n_estimators=100,
+            subsample=0.9
+        )),
         ('SVC', SVC()),
-        ('LSVC', LinearSVC())
+        ('Linear SVC', LinearSVC())
     ]
 
     results_metrics = []
