@@ -20,7 +20,7 @@ def to_bool(dataframe: pd.DataFrame, col: str, conditional: str) -> pd.DataFrame
 
 
 def run():
-    _path = os.path.abspath(os.path.dirname(os.path.abspath(os.getcwd())))
+    _path = os.path.abspath(os.getcwd())
     train_dataframe = pd.read_csv(_path + '/data/train.csv')
 
     train_dataframe = to_bool(train_dataframe, 'strategy', 'late')
