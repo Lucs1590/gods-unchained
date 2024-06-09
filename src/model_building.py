@@ -1,21 +1,17 @@
 import os
-import sys
 import logging
 
 import joblib
 import numpy as np
 import pandas as pd
 
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.svm import SVC, LinearSVC
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.metrics import accuracy_score, f1_score, precision_score, roc_curve
 
 logger = logging.getLogger('gods_unchained')
-handler = logging.StreamHandler(sys.stdout)
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
 
 
 def ks_score(y_true, y_score):
@@ -31,108 +27,59 @@ def get_best_model(ks: list, models: list, names: list) -> list:
     return [name, ks, model]
 
 
-def run():
-    _path = os.path.abspath(os.getcwd())
-    train_dataframe = pd.read_parquet(
-        "artifacts/train_dataframe_engineered.parquet"
-    )
-    test_dataframe = pd.read_csv(_path + '/data/test.csv')
+def load_data(data_path: str) -> pd.DataFrame:
+    logger.info('Loading train and test data...')
+    train_df = pd.read_parquet("artifacts/train_dataframe_engineered.parquet")
+    test_df = pd.read_csv(data_path + '/test.csv')
+    return train_df, test_df
 
-    X = train_dataframe.drop(['strategy', 'id'], axis=1)
-    y = train_dataframe['strategy']
 
-    test_dataframe = test_dataframe.sample(
-        frac=1,
-        random_state=237
-    ).reset_index(drop=True)
+def prepare_test_data(test_df: pd.DataFrame, train_columns: list) -> pd.DataFrame:
+    logger.info('Preparing test data...')
 
-    test_dataframe['attack'] = test_dataframe['attack'].apply(
-        lambda x: np.log(x) if x > 0 else 0
-    )
-    test_dataframe['mana'] = test_dataframe['mana'].apply(
-        lambda x: np.log(x) if x > 0 else 0
-    )
-    test_dataframe['health'] = test_dataframe['health'].apply(
-        lambda x: np.log(x) if x > 0 else 0
-    )
+    for col in ['attack', 'mana', 'health']:
+        test_df[col] = test_df[col].apply(lambda x: np.log(x) if x > 0 else 0)
 
-    test_dataframe['attack_mana'] = test_dataframe['attack'] + \
-        test_dataframe['mana']
-    test_dataframe['attack_health'] = test_dataframe['attack'] + \
-        test_dataframe['health']
-    test_dataframe['mana_health'] = test_dataframe['mana'] + \
-        test_dataframe['health']
-    test_dataframe['attack_mana_health'] = test_dataframe['attack'] + \
-        test_dataframe['mana'] + test_dataframe['health']
+    test_df['attack_mana'] = test_df['attack'] + test_df['mana']
+    test_df['attack_health'] = test_df['attack'] + test_df['health']
+    test_df['mana_health'] = test_df['mana'] + test_df['health']
+    test_df['attack_mana_health'] = test_df['attack'] + \
+        test_df['mana'] + test_df['health']
 
-    test_dataframe['att_greater_5'] = test_dataframe['attack'] > 5
-    test_dataframe['mana_greater_7'] = test_dataframe['mana'] > 7
-    test_dataframe['health_greater_6'] = test_dataframe['health'] > 5
-    test_dataframe['att_greater_mana'] = test_dataframe['attack'] > test_dataframe['mana']
-    test_dataframe['att_greater_health'] = test_dataframe['attack'] > test_dataframe['health']
-    test_dataframe['mana_greater_health'] = test_dataframe['mana'] > test_dataframe['health']
+    for col1, col2 in [('attack', 'mana'), ('attack', 'health'), ('mana', 'health')]:
+        test_df[f'{col1}_greater_{col2}'] = (
+            test_df[col1] > test_df[col2]
+        ).astype(int)
 
-    test_dataframe['att_greater_5'] = test_dataframe['att_greater_5'].astype(
-        int
-    )
-    test_dataframe['mana_greater_7'] = test_dataframe['mana_greater_7'].astype(
-        int
-    )
-    test_dataframe['health_greater_6'] = test_dataframe['health_greater_6'].astype(
-        int
-    )
-    test_dataframe['att_greater_mana'] = test_dataframe['att_greater_mana'].astype(
-        int
-    )
-    test_dataframe['att_greater_health'] = test_dataframe['att_greater_health'].astype(
-        int
-    )
-    test_dataframe['mana_greater_health'] = test_dataframe['mana_greater_health'].astype(
-        int
-    )
-
-    test_dataframe = pd.get_dummies(
-        test_dataframe,
+    test_df = pd.get_dummies(
+        test_df,
         columns=['god', 'type'],
         drop_first=True,
         prefix=['god', 'type'],
         prefix_sep='_'
     )
 
-    test_dataframe.replace([np.inf, -np.inf], np.nan, inplace=True)
-    test_dataframe['attack'] = test_dataframe['attack'].fillna(
-        test_dataframe['attack'].mean()
-    )
-    test_dataframe['mana'] = test_dataframe['mana'].fillna(
-        test_dataframe['mana'].mean()
-    )
-    test_dataframe['health'] = test_dataframe['health'].fillna(
-        test_dataframe['health'].mean()
-    )
-    test_dataframe['attack_mana'] = test_dataframe['attack_mana'].fillna(
-        test_dataframe['attack_mana'].mean()
-    )
-    test_dataframe['attack_health'] = test_dataframe['attack_health'].fillna(
-        test_dataframe['attack_health'].mean()
-    )
-    test_dataframe['mana_health'] = test_dataframe['mana_health'].fillna(
-        test_dataframe['mana_health'].mean()
-    )
-    test_dataframe['attack_mana_health'] = test_dataframe['attack_mana_health'].fillna(
-        test_dataframe['attack_mana_health'].mean()
-    )
+    for col in ['attack', 'mana', 'health', 'attack_mana', 'attack_health', 'mana_health', 'attack_mana_health']:
+        test_df[col] = test_df[col].fillna(test_df[col].mean())
 
-    test_dataframe = test_dataframe[X.columns]
+    test_df = test_df[train_columns]
+
+    return test_df
+
+
+def train_and_evaluate_models(X_train: pd.DataFrame, X_test: pd.DataFrame, y_train: pd.Series, y_test: pd.Series):
+    logger.info('Training and evaluating models...')
 
     models = [
         ('Logistic Regression', LogisticRegression()),
         ('Random Forest', RandomForestClassifier(
-            bootstrap=False, criterion="entropy",
-            max_features=0.55,
-            min_samples_leaf=8,
-            min_samples_split=12,
-            n_estimators=100
-        )),
+            bootstrap=False,
+            criterion="entropy",
+         max_features=0.55,
+         min_samples_leaf=8,
+         min_samples_split=12,
+         n_estimators=100
+         )),
         ('Gradient Boosting', GradientBoostingClassifier(
             learning_rate=0.1,
             n_estimators=100,
@@ -146,16 +93,10 @@ def run():
     models_result = []
     names = []
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X,
-        y,
-        test_size=0.2,
-        random_state=237
-    )
-
     for name, model in models:
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
+
         accuracy = accuracy_score(y_test, y_pred)
         ks = ks_score(y_test, y_pred)
         f1 = f1_score(y_test, y_pred)
@@ -165,28 +106,55 @@ def run():
         names.append(name)
         models_result.append(model)
 
-        logging.info(f'{name} ks: {ks:.2f}')
-        logging.info(f'{name} accuracy: {accuracy:.2f}')
-        logging.info(f'{name} f1: {f1:.2f}')
-        logging.info(f'{name} precision: {precision:.2f}')
-        logging.info("\n")
+        logger.info(f'{name} KS: {ks:.2f}')
+        logger.info(f'{name} Accuracy: {accuracy:.2f}')
+        logger.info(f'{name} F1: {f1:.2f}')
+        logger.info(f'{name} Precision: {precision:.2f}')
+        logger.info("\n")
 
-    best_model = get_best_model(results_metrics, models_result, names)
-    best_model[2].fit(X, y)
-    y_pred = best_model[2].predict(test_dataframe)
+    return get_best_model(results_metrics, models_result, names)
 
-    raw_test = pd.read_csv(_path + '/data/test.csv')
-    raw_train = pd.read_csv(_path + '/data/train.csv')
 
-    raw_test['strategy'] = y_pred
+def save_results(model, predictions: np.ndarray, data_path: str):
+    logger.info('Saving results...')
+    joblib.dump(model, "artifacts/best_model.pkl")
+
+    raw_test = pd.read_csv(data_path + '/test.csv')
+    raw_train = pd.read_csv(data_path + '/train.csv')
+
+    raw_test['strategy'] = predictions
     raw_test['strategy'] = raw_test['strategy'].apply(
         lambda x: 'late' if x == 1 else 'early'
     )
 
     joined = pd.concat([raw_train, raw_test], axis=0)
     joined = joined.sort_values(by='id')
+    joined.to_parquet(data_path + '/cards.parquet', index=False)
+    joined.to_csv(data_path + '/cards.csv', index=False)
 
-    joblib.dump(best_model[2], "artifacts/best_model.pkl")
 
-    joined.to_parquet(_path + '/data/cards.parquet', index=False)
-    joined.to_csv(_path + '/data/cards.csv', index=False)
+def run():
+    _path = os.path.abspath(os.getcwd())
+    train_df, test_df = load_data(_path + "/data")
+
+    X = train_df.drop(['strategy', 'id'], axis=1)
+    y = train_df['strategy']
+    test_df = prepare_test_data(test_df.copy(), X.columns)
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=237
+    )
+    best_model_name, best_model_ks, best_model = train_and_evaluate_models(
+        X_train,
+        X_test,
+        y_train,
+        y_test
+    )
+
+    logger.info(f'Best model: {best_model_name}, KS: {best_model_ks:.2f}')
+
+    y_pred = best_model.predict(test_df)
+
+    save_results(best_model, y_pred, _path + '/data')
+
+    logger.info('Model building completed successfully!')
