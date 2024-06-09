@@ -20,13 +20,13 @@ def run():
     _path = os.path.abspath(os.path.dirname(os.path.abspath(os.getcwd())))
 
     train_dataframe['attack'] = train_dataframe['attack'].apply(
-        lambda x: np.log(x)
+        lambda x: np.log(x) if x > 0 else 0
     )
     train_dataframe['mana'] = train_dataframe['mana'].apply(
-        lambda x: np.log(x)
+        lambda x: np.log(x) if x > 0 else 0
     )
     train_dataframe['health'] = train_dataframe['health'].apply(
-        lambda x: np.log(x)
+        lambda x: np.log(x) if x > 0 else 0
     )
     train_dataframe['attack_mana'] = train_dataframe['attack'] + \
         train_dataframe['mana']
