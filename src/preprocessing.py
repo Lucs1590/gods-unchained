@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 from scipy.stats import normaltest
 
-logger = logging.getLogger()
+logger = logging.getLogger('gods_unchained')
 handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)

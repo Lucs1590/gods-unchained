@@ -12,7 +12,7 @@ from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.svm import SVC, LinearSVC
 from sklearn.metrics import accuracy_score, f1_score, precision_score, roc_curve
 
-logger = logging.getLogger()
+logger = logging.getLogger('gods_unchained')
 handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)

@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 from sklearn.feature_selection import mutual_info_classif
 
-logger = logging.getLogger()
+logger = logging.getLogger('gods_unchained')
 handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)

@@ -3,7 +3,7 @@ import argparse
 import logging
 import importlib
 
-logger = logging.getLogger()
+logger = logging.getLogger('gods_unchained')
 handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)
