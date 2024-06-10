@@ -14,7 +14,7 @@ from sklearn.metrics import accuracy_score, f1_score, precision_score, roc_curve
 logger = logging.getLogger('gods_unchained')
 
 
-def ks_score(y_true, y_score):
+def ks_score(y_true: np.ndarray, y_score: np.ndarray) -> float:
     fpr, tpr, _ = roc_curve(y_true, y_score)
     return max(tpr - fpr)
 
