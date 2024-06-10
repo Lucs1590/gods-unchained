@@ -1,5 +1,4 @@
 import unittest
-import argparse
 
 import pandas as pd
 
@@ -52,3 +51,7 @@ class TestPreprocessing(unittest.TestCase):
         )
 
         mock_makedirs.assert_called_once_with("artifacts", exist_ok=True)
+
+
+if __name__ == '__main__':
+    unittest.main()
