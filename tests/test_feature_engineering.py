@@ -108,18 +108,18 @@ class TestFeatureEngineering(unittest.TestCase):
             "artifacts/feature_importance_engineered.png"
         )
 
-    @patch("src.feature_engineering.logger")
-    @patch("src.feature_engineering.load_preprocessed_data")
-    @patch("src.feature_engineering.calculate_log_transformations")
-    @patch("src.feature_engineering.calculate_combined_features")
-    @patch("src.feature_engineering.calculate_comparison_features")
-    @patch("src.feature_engineering.encode_categorical_features")
-    @patch("src.feature_engineering.impute_missing_values")
-    @patch("src.feature_engineering.pd.DataFrame.drop")
-    @patch("src.feature_engineering.select_features")
-    @patch("src.feature_engineering.save_artifacts")
-    @patch("src.feature_engineering.sns")
-    @patch("src.feature_engineering.plt")
+    @patch("feature_engineering.logger")
+    @patch("feature_engineering.load_preprocessed_data")
+    @patch("feature_engineering.calculate_log_transformations")
+    @patch("feature_engineering.calculate_combined_features")
+    @patch("feature_engineering.calculate_comparison_features")
+    @patch("feature_engineering.encode_categorical_features")
+    @patch("feature_engineering.impute_missing_values")
+    @patch("feature_engineering.pd.DataFrame.drop")
+    @patch("feature_engineering.select_features")
+    @patch("feature_engineering.save_artifacts")
+    @patch("feature_engineering.sns")
+    @patch("feature_engineering.plt")
     def test_run(
         self, mock_plt, mock_sns,
         mock_save_artifacts, mock_select_features, mock_drop, mock_impute_missing_values,
