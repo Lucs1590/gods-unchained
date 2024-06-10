@@ -19,7 +19,8 @@ def load_preprocessed_data() -> pd.DataFrame:
 def calculate_log_transformations(dataframe: pd.DataFrame) -> pd.DataFrame:
     logger.info("Calculating log transformations...")
     for col in ['attack', 'mana', 'health']:
-        dataframe[col] = dataframe[col].apply(lambda x: np.log(x) if x > 0 else 0)
+        dataframe[col] = dataframe[col].apply(
+            lambda x: np.log(x) if x > 0 else 0)
     return dataframe
 
 
@@ -28,7 +29,8 @@ def calculate_combined_features(dataframe: pd.DataFrame) -> pd.DataFrame:
     dataframe['attack_mana'] = dataframe['attack'] + dataframe['mana']
     dataframe['attack_health'] = dataframe['attack'] + dataframe['health']
     dataframe['mana_health'] = dataframe['mana'] + dataframe['health']
-    dataframe['attack_mana_health'] = dataframe['attack'] + dataframe['mana'] + dataframe['health']
+    dataframe['attack_mana_health'] = dataframe['attack'] + \
+        dataframe['mana'] + dataframe['health']
     return dataframe
 
 
@@ -37,9 +39,12 @@ def calculate_comparison_features(dataframe: pd.DataFrame) -> pd.DataFrame:
     dataframe['att_greater_5'] = (dataframe['attack'] > 5).astype(int)
     dataframe['mana_greater_7'] = (dataframe['mana'] > 7).astype(int)
     dataframe['health_greater_6'] = (dataframe['health'] > 5).astype(int)
-    dataframe['att_greater_mana'] = (dataframe['attack'] > dataframe['mana']).astype(int)
-    dataframe['att_greater_health'] = (dataframe['attack'] > dataframe['health']).astype(int)
-    dataframe['mana_greater_health'] = (dataframe['mana'] > dataframe['health']).astype(int)
+    dataframe['att_greater_mana'] = (
+        dataframe['attack'] > dataframe['mana']).astype(int)
+    dataframe['att_greater_health'] = (
+        dataframe['attack'] > dataframe['health']).astype(int)
+    dataframe['mana_greater_health'] = (
+        dataframe['mana'] > dataframe['health']).astype(int)
     return dataframe
 
 
@@ -73,7 +78,8 @@ def select_features(X: pd.DataFrame, y: pd.Series) -> tuple:
 def save_artifacts(dataframe: pd.DataFrame, columns: list, mutual_info: pd.Series):
     logger.info("Saving artifacts...")
     os.makedirs("artifacts", exist_ok=True)
-    dataframe.to_parquet("artifacts/train_dataframe_engineered.parquet", index=False)
+    dataframe.to_parquet(
+        "artifacts/train_dataframe_engineered.parquet", index=False)
 
     with open("artifacts/selected_columns.txt", "w") as f:
         for col in columns:
@@ -92,6 +98,10 @@ def run():
     logger.info("Starting feature engineering step")
 
     train_dataframe = load_preprocessed_data()
+    train_dataframe.sample(
+        frac=1,
+        random_state=237
+    ).reset_index(drop=True)
 
     train_dataframe = calculate_log_transformations(train_dataframe)
     train_dataframe = calculate_combined_features(train_dataframe)

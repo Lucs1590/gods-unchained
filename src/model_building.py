@@ -37,6 +37,11 @@ def load_data(data_path: str) -> pd.DataFrame:
 def prepare_test_data(test_df: pd.DataFrame, train_columns: list) -> pd.DataFrame:
     logger.info('Preparing test data...')
 
+    test_df = test_df.sample(
+        frac=1,
+        random_state=237
+    ).reset_index(drop=True)
+
     for col in ['attack', 'mana', 'health']:
         test_df[col] = test_df[col].apply(lambda x: np.log(x) if x > 0 else 0)
 
@@ -75,11 +80,11 @@ def train_and_evaluate_models(X_train: pd.DataFrame, X_test: pd.DataFrame, y_tra
         ('Random Forest', RandomForestClassifier(
             bootstrap=False,
             criterion="entropy",
-         max_features=0.55,
-         min_samples_leaf=8,
-         min_samples_split=12,
-         n_estimators=100
-         )),
+            max_features=0.55,
+            min_samples_leaf=8,
+            min_samples_split=12,
+            n_estimators=100
+        )),
         ('Gradient Boosting', GradientBoostingClassifier(
             learning_rate=0.1,
             n_estimators=100,
