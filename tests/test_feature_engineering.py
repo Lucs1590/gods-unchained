@@ -1,11 +1,16 @@
+import os
+import sys
+import random
 import unittest
 from unittest import mock
 from unittest.mock import patch
 
-import random
 import numpy as np
 import pandas as pd
-import src.feature_engineering as fe
+
+sys.path.append(os.path.abspath(os.path.join('src')))  # noqa
+
+import feature_engineering as fe
 
 
 class TestFeatureEngineering(unittest.TestCase):

@@ -1,9 +1,13 @@
+import os
+import sys
 import unittest
+from unittest.mock import patch
 
 import pandas as pd
 
-from unittest.mock import patch
-import src.preprocessing as preprocessing
+sys.path.append(os.path.abspath(os.path.join('src')))  # noqa
+
+import preprocessing
 
 
 class TestPreprocessing(unittest.TestCase):

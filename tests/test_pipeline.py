@@ -1,8 +1,13 @@
+import os
+import sys
 import unittest
 import argparse
 
 from unittest.mock import patch
-from src.pipeline import main
+
+sys.path.append(os.path.abspath(os.path.join('src')))  # noqa
+
+from pipeline import main
 
 
 class TestPipeline(unittest.TestCase):
