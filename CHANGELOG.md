@@ -1,3 +1,29 @@
+## 0.4.0 (2024-06-09)
+
+### Feat
+
+- add missing sample step
+- applying model building good practices
+- using dataframe instead of df
+- applying feature engineering good practices
+- applying preprocessing good practices
+- add model building step
+- feature engineer step
+- add initial preprocessing code
+- add initial pipeline log
+
+### Fix
+
+- path and divide by zero errors
+- divide by zero runtime error
+- wrong space
+- path reference
+- script sorting
+
+### Refactor
+
+- changing logger name
+
 ## 0.3.0 (2024-06-08)
 
 ### Feat
