@@ -86,7 +86,7 @@ def train_and_evaluate_models(X_train: pd.DataFrame, X_test: pd.DataFrame, y_tra
             n_estimators=100
         )),
         ('Gradient Boosting', GradientBoostingClassifier(
-            learning_rate=0.1,
+            learning_rate=0.1,  
             n_estimators=100,
             subsample=0.9
         )),

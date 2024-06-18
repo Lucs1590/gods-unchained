@@ -258,3 +258,4 @@ def get_all_urls():
     } for route in app.routes]
     logger.info('Returning the list of URLs...')
     return urls
+
