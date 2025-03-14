@@ -1,3 +1,17 @@
+## Unreleased
+
+### Feat
+
+- load environment variables and configure Redis host from .env file
+- remove 'lucas' from allowed_users list
+- enhance Redis connection handling and add user to allowed_users
+- add Docker Compose configuration for web and Redis services
+- Remove test_set_strategy function
+
+### Refactor
+
+- restructure Docker Compose configuration to separate Redis service into infra.yaml
+
 ## 0.5.0 (2024-06-10)
 
 ### Feat
@@ -46,16 +60,6 @@
 
 - Add endpoint to retrieve card information by ID
 - exporting raw data instead of calculated
-- add application logging
-- Add Pydantic model for strategy response
-- applying card search
-- Add prometheus metric
-- add dummy to test the redis cache
-- Mount Prometheus endpoint with WSGI middleware and redis server
-- Improve error raise
-- Add basic authentication to the api
-- Change HTTP method for retrieving card strategy endpoint
-- rename endpoint to retrieve_card_strategy
 
 ### Refactor
 
@@ -73,3 +77,13 @@
 - add data analysis and visualization
 - dataset initial analysis
 - initial structure to eda
+- add application logging
+- Add Pydantic model for strategy response
+- applying card search
+- Add prometheus metric
+- add dummy to test the redis cache
+- Mount Prometheus endpoint with WSGI middleware and redis server
+- Improve error raise
+- Add basic authentication to the api
+- Change HTTP method for retrieving card strategy endpoint
+- rename endpoint to retrieve_card_strategy

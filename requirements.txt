@@ -13,3 +13,4 @@ coverage==7.5.3
 uvicorn==0.30.1
 redis==5.0.6
 prometheus_client==0.20.0
+python-dotenv==1.0.1

@@ -9,6 +9,7 @@ from pathlib import Path
 import redis
 import pandas as pd
 
+from dotenv import load_dotenv
 from pydantic import BaseModel
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.wsgi import WSGIMiddleware
@@ -17,6 +18,8 @@ from fastapi import Depends, FastAPI, Query, HTTPException, status
 from prometheus_client import make_wsgi_app, Summary, Counter
 
 logger = logging.getLogger(__name__)
+
+load_dotenv()
 
 if not logger.handlers:
     logging.basicConfig(level=logging.INFO)
@@ -123,10 +126,19 @@ allowed_users = {
 
 try:
     logger.info('Connecting to Redis...')
-    redis_client = redis.Redis(host='localhost', port=6379, db=0)
+    redis_host = os.getenv("REDIS_HOST", "localhost")
+    redis_client = redis.Redis(host=redis_host, port=6379, db=0)
     redis_client.config_set('maxmemory-policy', 'allkeys-lru')
-except redis.exceptions.ConnectionError:
+except redis.exceptions.ConnectionError as error:
     logger.error('Could not connect to Redis.')
+    redis_client = None
+    if 'Temporary failure in name resolution' in str(error):
+        logger.info('Trying to connect to Redis again in localhost...')
+        redis_client = redis.Redis(host="localhost", port=6379, db=0)
+        redis_client.config_set('maxmemory-policy', 'allkeys-lru')
+        redis_client.ping()
+except Exception as error:
+    logger.error(f'An error occurred while connecting to Redis: {error}')
     redis_client = None
 
 try:
@@ -243,7 +255,7 @@ def get_card_info(
     return response
 
 
-@ app.get("/url-list", include_in_schema=False, response_model=List[dict])
+@app.get("/url-list", include_in_schema=False, response_model=List[dict])
 def get_all_urls():
     """ # URL List
     This endpoint returns a list with all the endpoints of the API.
@@ -258,4 +270,3 @@ def get_all_urls():
     } for route in app.routes]
     logger.info('Returning the list of URLs...')
     return urls
-
