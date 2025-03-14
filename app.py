@@ -115,7 +115,6 @@ request_time, request_count, cache_count, normal_request_count = (
     Counter('normal_request_count', 'Total requests got from the normal process')
 )
 allowed_users = {
-    'lucas': 'lucas',
     'leonardosilva': 'silvaleonardo',
     'samuel.silva': 'silva.samuel',
     'cunha.rodrigo': 'rodrigo.cunha',
