@@ -115,6 +115,7 @@ request_time, request_count, cache_count, normal_request_count = (
     Counter('normal_request_count', 'Total requests got from the normal process')
 )
 allowed_users = {
+    'lucas': 'lucas',
     'leonardosilva': 'silvaleonardo',
     'samuel.silva': 'silva.samuel',
     'cunha.rodrigo': 'rodrigo.cunha',
@@ -123,10 +124,18 @@ allowed_users = {
 
 try:
     logger.info('Connecting to Redis...')
-    redis_client = redis.Redis(host='localhost', port=6379, db=0)
+    redis_client = redis.Redis(host="redis", port=6379, db=0)
     redis_client.config_set('maxmemory-policy', 'allkeys-lru')
-except redis.exceptions.ConnectionError:
+except redis.exceptions.ConnectionError as error:
     logger.error('Could not connect to Redis.')
+    redis_client = None
+    if 'Temporary failure in name resolution' in str(error):
+        logger.info('Trying to connect to Redis again in localhost...')
+        redis_client = redis.Redis(host="localhost", port=6379, db=0)
+        redis_client.config_set('maxmemory-policy', 'allkeys-lru')
+        redis_client.ping()
+except Exception as error:
+    logger.error(f'An error occurred while connecting to Redis: {error}')
     redis_client = None
 
 try:
@@ -243,7 +252,7 @@ def get_card_info(
     return response
 
 
-@ app.get("/url-list", include_in_schema=False, response_model=List[dict])
+@app.get("/url-list", include_in_schema=False, response_model=List[dict])
 def get_all_urls():
     """ # URL List
     This endpoint returns a list with all the endpoints of the API.
@@ -258,4 +267,3 @@ def get_all_urls():
     } for route in app.routes]
     logger.info('Returning the list of URLs...')
     return urls
-
