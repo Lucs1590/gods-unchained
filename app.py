@@ -9,6 +9,7 @@ from pathlib import Path
 import redis
 import pandas as pd
 
+from dotenv import load_dotenv
 from pydantic import BaseModel
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.wsgi import WSGIMiddleware
@@ -17,6 +18,8 @@ from fastapi import Depends, FastAPI, Query, HTTPException, status
 from prometheus_client import make_wsgi_app, Summary, Counter
 
 logger = logging.getLogger(__name__)
+
+load_dotenv()
 
 if not logger.handlers:
     logging.basicConfig(level=logging.INFO)
@@ -123,7 +126,8 @@ allowed_users = {
 
 try:
     logger.info('Connecting to Redis...')
-    redis_client = redis.Redis(host="redis", port=6379, db=0)
+    redis_host = os.getenv("REDIS_HOST", "localhost")
+    redis_client = redis.Redis(host=redis_host, port=6379, db=0)
     redis_client.config_set('maxmemory-policy', 'allkeys-lru')
 except redis.exceptions.ConnectionError as error:
     logger.error('Could not connect to Redis.')
